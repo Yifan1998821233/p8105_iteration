@@ -165,49 +165,168 @@ sim_mean_sd(100, 6)
     ##    <dbl>     <dbl>
     ## 1   6.24      6.25
 
-url =
-“<https://www.amazon.com/product-reviews/B00005JNBQ/ref=cm_cr_arp_d_viewopt_rvwer?ie=UTF8&reviewerType=avp_only_reviews&sortBy=recent&pageNumber=1>”
+## Let’s review Napoleon Dynamite
 
-dynamite\_html = read\_html(url)
+``` r
+url = "https://www.amazon.com/product-reviews/B00005JNBQ/ref=cm_cr_arp_d_viewopt_rvwer?ie=UTF8&reviewerType=avp_only_reviews&sortBy=recent&pageNumber=1"
 
-review\_titles = dynamite\_html %\>% html\_nodes(“.a-text-bold span”)
-%\>% html\_text()
+dynamite_html = read_html(url)
 
-review\_stars = dynamite\_html %\>% html\_nodes(“\#cm\_cr-review\_list
-.review-rating”) %\>% html\_text() %\>% str\_extract(“^\\d”) %\>%
-as.numeric()
+review_titles = 
+  dynamite_html %>%
+  html_nodes(".a-text-bold span") %>%
+  html_text()
 
-review\_text = dynamite\_html %\>% html\_nodes(“.review-text-content
-span”) %\>% html\_text() %\>% str\_replace\_all(“”, "") %\>% str\_trim()
+review_stars = 
+  dynamite_html %>%
+  html_nodes("#cm_cr-review_list .review-rating") %>%
+  html_text() %>%
+  str_extract("^\\d") %>% # extract the first digit from 1-9 of that string inputed
+  as.numeric()
 
-reviews = tibble( title = review\_titles, stars = review\_stars, text =
-review\_text )
+review_text = 
+  dynamite_html %>%
+  html_nodes(".review-text-content span") %>%
+  html_text() %>% 
+  str_replace_all("\n", "") %>% # get rid of \n at the beginning and the end, replace it to ""
+  str_trim()
 
-read\_page\_reviews \<- function(url) {
+reviews = tibble(
+  title = review_titles,
+  stars = review_stars,
+  text = review_text
+)
+```
 
-html = read\_html(url)
+What about the next page of reviews… Let’s turn that code into a
+function
 
-review\_titles = html %\>% html\_nodes(“.a-text-bold span”) %\>%
-html\_text()
+``` r
+read_page_reviews <- function(url) {
+  
+   html = read_html(url)
 
-review\_stars = html %\>% html\_nodes(“\#cm\_cr-review\_list
-.review-rating”) %\>% html\_text() %\>% str\_extract(“^\\d”) %\>%
-as.numeric()
+  review_titles =
+    html %>%
+    html_nodes(".a-text-bold span") %>%
+    html_text()
 
-review\_text = html %\>% html\_nodes(“.review-text-content span”) %\>%
-html\_text() %\>% str\_replace\_all(“”, "") %\>% str\_trim()
+  review_stars =
+    html %>%
+    html_nodes("#cm_cr-review_list .review-rating") %>%
+    html_text() %>%
+    str_extract("^\\d") %>%
+    as.numeric()
 
-tibble( title = review\_titles, stars = review\_stars, text =
-review\_text ) }
+  review_text =
+    html %>%
+    html_nodes(".review-text-content span") %>%
+    html_text() %>%
+    str_replace_all("\n", "") %>%
+    str_trim()
 
-url\_base =
-“<https://www.amazon.com/product-reviews/B00005JNBQ/ref=cm_cr_arp_d_viewopt_rvwer?ie=UTF8&reviewerType=avp_only_reviews&sortBy=recent&pageNumber=>”
-vec\_urls = str\_c(url\_base, 1:5)
+  reviews =
+   tibble(
+    title = review_titles,
+    stars = review_stars,
+    text = review_text
+  )
+  reviews
+}
+```
 
-dynamite\_reviews = bind\_rows( read\_page\_reviews(vec\_urls\[1\]),
-read\_page\_reviews(vec\_urls\[2\]),
-read\_page\_reviews(vec\_urls\[3\]),
-read\_page\_reviews(vec\_urls\[4\]), read\_page\_reviews(vec\_urls\[5\])
+Let me try my function.
+
+``` r
+dynamite_html = "https://www.amazon.com/product-reviews/B00005JNBQ/ref=cm_cr_arp_d_viewopt_rvwer?ie=UTF8&reviewerType=avp_only_reviews&sortBy=recent&pageNumber=3"
+
+read_page_reviews(dynamite_html)
+```
+
+    ## # A tibble: 10 x 3
+    ##    title                     stars text                                         
+    ##    <chr>                     <dbl> <chr>                                        
+    ##  1 Best.Movie!                   5 "I enjoyed showing my children this \"classi~
+    ##  2 Great Movie                   5 "I love this movie. Showed it to my middle s~
+    ##  3 Tina, you fat lard, come~     5 "A very quotable, awkard and hilarious movie~
+    ##  4 Funny!                        4 "It is a great movie although it’s a little ~
+    ##  5 Excellent for families        5 "Highly recommend for family entertainment"  
+    ##  6 Hilarious!                    5 "Hilarious!"                                 
+    ##  7 Excellent in all fronts.      5 "Excellent in all fronts."                   
+    ##  8 good                          5 "good"                                       
+    ##  9 Buy                           5 "Very good movie not very expensive"         
+    ## 10 If you like silly, it's ~     5 "My husband and teen boys loved it, I though~
+
+Let’s read a few pages of reviews.
+
+``` r
+url_base = "https://www.amazon.com/product-reviews/B00005JNBQ/ref=cm_cr_arp_d_viewopt_rvwer?ie=UTF8&reviewerType=avp_only_reviews&sortBy=recent&pageNumber="
+vec_urls = str_c(url_base, 1:5)
+
+dynamite_reviews = bind_rows(
+  read_page_reviews(vec_urls[1]),
+  read_page_reviews(vec_urls[2]),
+  read_page_reviews(vec_urls[3]),
+  read_page_reviews(vec_urls[4]),
+  read_page_reviews(vec_urls[5])
 )
 
-dynamite\_reviews
+dynamite_reviews
+```
+
+    ## # A tibble: 50 x 3
+    ##    title                  stars text                                            
+    ##    <chr>                  <dbl> <chr>                                           
+    ##  1 Just watch the freaki~     5 "Its a great movie, gosh!!"                     
+    ##  2 Great Value                5 "Great Value"                                   
+    ##  3 I LOVE THIS MOVIE          5 "THIS MOVIE IS SO FUNNY ONE OF MY FAVORITES"    
+    ##  4 Don't you wish you co~     5 "Watch it 100 times. Never. Gets. Old."         
+    ##  5 Stupid, but very funn~     5 "If you like stupidly funny '90s teenage movies~
+    ##  6 The beat                   5 "The best"                                      
+    ##  7 Hilarious                  5 "Super funny! Loved the online rental."         
+    ##  8 Love this movie            5 "We love this product.  It came in a timely man~
+    ##  9 Entertaining, limited~     4 "Entertainment level gets a 5 star but having p~
+    ## 10 Boo                        1 "We rented this movie because our Adventure Dat~
+    ## # ... with 40 more rows
+
+## Functions as arguments
+
+``` r
+x_vec = rnorm(25, 0, 1)
+
+my_summary = function(x, summ_func) {
+  summ_func(x)
+}
+
+my_summary(x_vec, sd)
+```
+
+    ## [1] 1.058145
+
+``` r
+my_summary(x_vec, IQR)
+```
+
+    ## [1] 1.064439
+
+``` r
+my_summary(x_vec, var)
+```
+
+    ## [1] 1.11967
+
+## Scoping and names
+
+``` r
+f = function(x) {
+  z = x + y
+  z
+}
+
+x = 1
+y = 2
+
+f(x = y)
+```
+
+    ## [1] 4
